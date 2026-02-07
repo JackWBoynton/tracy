@@ -209,12 +209,14 @@ CPMAddPackage(
 
 # json
 
-CPMAddPackage(
-    NAME json
-    GITHUB_REPOSITORY nlohmann/json
-    GIT_TAG v3.12.0
-    EXCLUDE_FROM_ALL TRUE
-)
+if(NOT TARGET nlohmann_json::nlohmann_json)
+    CPMAddPackage(
+        NAME json
+        GITHUB_REPOSITORY nlohmann/json
+        GIT_TAG v3.12.0
+        EXCLUDE_FROM_ALL TRUE
+    )
+endif()
 
 # md4c
 
