@@ -2,12 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef __EMSCRIPTEN__
-#  include <emscripten/html5.h>
-#  include <GLES2/gl2.h>
-#else
-#  include <backends/imgui_impl_opengl3_loader.h>
-#endif
 #include "TracyTexture.hpp"
 #include "../public/common/TracyForceInline.hpp"
 
@@ -19,6 +13,30 @@
 #include "../zigzag16.hpp"
 #include "../zigzag32.hpp"
 
+// Backend selection - define one of these before including this file:
+//   TRACY_BACKEND_OPENGL3
+//   TRACY_BACKEND_VULKAN
+//   TRACY_BACKEND_D3D11
+//   TRACY_BACKEND_D3D12
+//   TRACY_BACKEND_METAL
+//   TRACY_BACKEND_WEBGPU
+
+#if defined(TRACY_BACKEND_OPENGL3)
+#  ifdef __EMSCRIPTEN__
+#    include <emscripten/html5.h>
+#    include <GLES2/gl2.h>
+#  elif defined(__APPLE__)
+#    define GL_SILENCE_DEPRECATION
+#    include <OpenGL/gl3.h>
+#    include <OpenGL/gl3ext.h>
+#  elif defined(_WIN32)
+#    include <backends/imgui_impl_opengl3_loader.h>
+#  else
+#    include <GL/gl.h>
+#    include <GL/glext.h>
+#  endif
+#endif
+
 // Global zigzag texture used by TracyImGui
 ImTextureID zigzagTex;
 
@@ -28,6 +46,8 @@ ImTextureID zigzagTex;
 
 namespace tracy
 {
+
+#if defined(TRACY_BACKEND_OPENGL3)
 
 static bool s_hardwareS3tc;
 
@@ -76,12 +96,12 @@ ImTextureID MakeTexture( bool zigzag )
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, zigzag ? GL_REPEAT : GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-    return tex;
+    return (ImTextureID)(intptr_t)tex;
 }
 
 void FreeTexture( ImTextureID _tex, void(*runOnMainThread)(const std::function<void()>&, bool) )
 {
-    auto tex = (GLuint)_tex;
+    auto tex = (GLuint)(intptr_t)_tex;
     runOnMainThread( [tex] { glDeleteTextures( 1, &tex ); }, false );
 }
 
@@ -169,7 +189,7 @@ static tracy_force_inline void DecodeDxt1Part( uint64_t d, uint32_t* dst, uint32
 
 void UpdateTexture( ImTextureID _tex, const char* data, int w, int h )
 {
-    auto tex = (GLuint)_tex;
+    auto tex = (GLuint)(intptr_t)_tex;
     glBindTexture( GL_TEXTURE_2D, tex );
     if( s_hardwareS3tc )
     {
@@ -197,19 +217,49 @@ void UpdateTexture( ImTextureID _tex, const char* data, int w, int h )
 
 void UpdateTextureRGBA( ImTextureID _tex, void* data, int w, int h )
 {
-    auto tex = (GLuint)_tex;
+    auto tex = (GLuint)(intptr_t)_tex;
     glBindTexture( GL_TEXTURE_2D, tex );
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data );
 }
 
 void UpdateTextureRGBAMips( ImTextureID _tex, void** data, int* w, int* h, size_t mips )
 {
-    auto tex = (GLuint)_tex;
+    auto tex = (GLuint)(intptr_t)_tex;
     glBindTexture( GL_TEXTURE_2D, tex );
     for( size_t i=0; i<mips; i++ )
     {
         glTexImage2D( GL_TEXTURE_2D, i, GL_RGBA, w[i], h[i], 0, GL_RGBA, GL_UNSIGNED_BYTE, data[i] );
     }
 }
+
+#else // No backend defined - stub implementations
+
+void InitTexture()
+{
+    zigzagTex = 0;
+}
+
+ImTextureID MakeTexture( bool )
+{
+    return 0;
+}
+
+void FreeTexture( ImTextureID, void(*)(const std::function<void()>&, bool) )
+{
+}
+
+void UpdateTexture( ImTextureID, const char*, int, int )
+{
+}
+
+void UpdateTextureRGBA( ImTextureID, void*, int, int )
+{
+}
+
+void UpdateTextureRGBAMips( ImTextureID, void**, int*, int*, size_t )
+{
+}
+
+#endif
 
 }
