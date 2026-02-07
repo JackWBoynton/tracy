@@ -38,9 +38,10 @@ namespace tracy
 
 double s_time = 0;
 
-View::View( void(*cbMainThread)(const std::function<void()>&, bool), const char* addr, uint16_t port, SetTitleCallback stcb, SetScaleCallback sscb, AttentionCallback acb, AchievementsMgr* amgr )
+View::View( void(*cbMainThread)(const std::function<void()>&, bool), const char* addr, uint16_t port, SetTitleCallback stcb, SetScaleCallback sscb, AttentionCallback acb, AchievementsMgr* amgr, bool embedded )
     : m_worker( addr, port, s_config.memoryLimit == 0 ? -1 : ( s_config.memoryLimitPercent * tracy::GetPhysicalMemorySize() / 100 ) )
     , m_staticView( false )
+    , m_embedded( embedded )
     , m_viewMode( ViewMode::LastFrames )
     , m_viewModeHeuristicTry( true )
     , m_totalMemory( GetPhysicalMemorySize() )
@@ -71,10 +72,11 @@ View::View( void(*cbMainThread)(const std::function<void()>&, bool), const char*
     SetupConfig();
 }
 
-View::View( void(*cbMainThread)(const std::function<void()>&, bool), FileRead& f, SetTitleCallback stcb, SetScaleCallback sscb, AttentionCallback acb, AchievementsMgr* amgr )
+View::View( void(*cbMainThread)(const std::function<void()>&, bool), FileRead& f, SetTitleCallback stcb, SetScaleCallback sscb, AttentionCallback acb, AchievementsMgr* amgr, bool embedded )
     : m_worker( f )
     , m_filename( f.GetFilename() )
     , m_staticView( true )
+    , m_embedded( embedded )
     , m_viewMode( ViewMode::Paused )
     , m_totalMemory( GetPhysicalMemorySize() )
     , m_tc( *this, m_worker, s_config.threadedRendering )
@@ -694,6 +696,12 @@ bool View::DrawImpl()
 {
     if( !m_worker.HasData() )
     {
+        if( m_embedded )
+        {
+            // In embedded mode, just show simple text - no separate window
+            ImGui::TextUnformatted( "Waiting for connection..." );
+            return true;
+        }
         bool keepOpen = true;
         char tmp[2048];
         sprintf( tmp, "%s###Connection", m_worker.GetAddr().c_str() );
@@ -788,15 +796,15 @@ bool View::DrawImpl()
         keepOpenPtr = &keepOpen;
     }
 
-#ifndef TRACY_NO_ROOT_WINDOW
-    if( !m_titleSet && m_stcb )
-    {
-        m_titleSet = true;
-        UpdateTitle();
-    }
-
     ImGuiViewport* viewport = ImGui::GetMainViewport();
+    if( !m_embedded )
     {
+        if( !m_titleSet && m_stcb )
+        {
+            m_titleSet = true;
+            UpdateTitle();
+        }
+
         auto& style = ImGui::GetStyle();
         const auto wrPrev = style.WindowRounding;
         const auto wbsPrev = style.WindowBorderSize;
@@ -816,13 +824,7 @@ bool View::DrawImpl()
         style.WindowPadding = wpPrev;
         style.Colors[ImGuiCol_WindowBg] = ImVec4( 0.11f, 0.11f, 0.08f, 1.f );
     }
-#else
-    char tmp[2048];
-    sprintf( tmp, "%s###Profiler", m_worker.GetCaptureName().c_str() );
-    ImGui::SetNextWindowSize( ImVec2( 1550, 800 ), ImGuiCond_FirstUseEver );
-    ImGui::Begin( tmp, keepOpenPtr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBringToFrontOnFocus );
-    ImGuiViewport* viewport = ImGui::GetMainViewport();
-#endif
+    // In embedded mode, the caller has already called Begin() - we just render content
 
     if( !m_staticView )
     {
@@ -1131,22 +1133,27 @@ bool View::DrawImpl()
         auto& style = ImGui::GetStyle();
         const auto wpPrev = style.WindowPadding;
         style.WindowPadding = ImVec2( 1, 0 );
-#ifndef TRACY_NO_ROOT_WINDOW
-        style.Colors[ImGuiCol_WindowBg] = ImVec4( 0.129f, 0.137f, 0.11f, 1.f );
-#endif
+        if( !m_embedded )
+        {
+            style.Colors[ImGuiCol_WindowBg] = ImVec4( 0.129f, 0.137f, 0.11f, 1.f );
+        }
 
         ImGui::Begin( "Work area", nullptr, ImGuiWindowFlags_NoNavFocus );
 
         style.WindowPadding = wpPrev;
-#ifndef TRACY_NO_ROOT_WINDOW
-        style.Colors[ImGuiCol_WindowBg] = ImVec4( 0.11f, 0.11f, 0.08f, 1.f );
-#endif
+        if( !m_embedded )
+        {
+            style.Colors[ImGuiCol_WindowBg] = ImVec4( 0.11f, 0.11f, 0.08f, 1.f );
+        }
     }
 
     DrawTimeline();
 
-    ImGui::End();
-    ImGui::End();
+    ImGui::End();  // Work area
+    if( !m_embedded )
+    {
+        ImGui::End();  // Profiler window (only in non-embedded mode)
+    }
 
     m_zoneHighlight = nullptr;
     m_gpuHighlight = nullptr;

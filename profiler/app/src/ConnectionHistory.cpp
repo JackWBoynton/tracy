@@ -4,7 +4,7 @@
 
 #include "ConnectionHistory.hpp"
 
-#include "../../server/tracy_pdqsort.h"
+#include "server/tracy_pdqsort.h"
 #include "profiler/TracyStorage.hpp"
 
 

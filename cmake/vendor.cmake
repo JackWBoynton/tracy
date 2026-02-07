@@ -133,16 +133,21 @@ add_library(TracyGetOpt STATIC EXCLUDE_FROM_ALL ${GETOPT_SOURCES} ${GETOPT_HEADE
 target_include_directories(TracyGetOpt PUBLIC ${GETOPT_DIR})
 
 # ImGui
+# Users can provide their own ImGui by setting ImGui_SOURCE_DIR before including Tracy
 
-CPMAddPackage(
-    NAME ImGui
-    GITHUB_REPOSITORY ocornut/imgui
-    GIT_TAG v1.92.5-docking
-    DOWNLOAD_ONLY TRUE
-    PATCHES
-        "${CMAKE_CURRENT_LIST_DIR}/imgui-emscripten.patch"
-        "${CMAKE_CURRENT_LIST_DIR}/imgui-loader.patch"
-)
+if(NOT DEFINED ImGui_SOURCE_DIR)
+    CPMAddPackage(
+        NAME ImGui
+        GITHUB_REPOSITORY ocornut/imgui
+        GIT_TAG v1.92.5-docking
+        DOWNLOAD_ONLY TRUE
+        PATCHES
+            "${CMAKE_CURRENT_LIST_DIR}/imgui-emscripten.patch"
+            "${CMAKE_CURRENT_LIST_DIR}/imgui-loader.patch"
+    )
+else()
+    message(STATUS "Using external ImGui from: ${ImGui_SOURCE_DIR}")
+endif()
 
 set(IMGUI_SOURCES
     imgui_widgets.cpp

@@ -19,15 +19,13 @@
 #  include <windows.h>
 #endif
 
-#define STB_IMAGE_IMPLEMENTATION
-#define STBI_ONLY_PNG
 #include "stb_image.h"
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "stb_image_resize.h"
 
-#include "../../public/common/TracyProtocol.hpp"
-#include "../../public/common/TracyVersion.hpp"
+#include "public/common/TracyProtocol.hpp"
+#include "public/common/TracyVersion.hpp"
 #include "profiler/TracyAchievements.hpp"
 #include "profiler/TracyBadVersion.hpp"
 #include "profiler/TracyConfig.hpp"
@@ -40,21 +38,15 @@
 #include "profiler/TracyView.hpp"
 #include "profiler/TracyWeb.hpp"
 #include "profiler/IconsFontAwesome6.h"
-#include "../../server/tracy_pdqsort.h"
-#include "../../server/tracy_robin_hood.h"
-#include "../../server/TracyFileHeader.hpp"
-#include "../../server/TracyFileRead.hpp"
-#include "../../server/TracyPrint.hpp"
-#include "../../server/TracySysUtil.hpp"
-#include "../../server/TracyWorker.hpp"
+#include "server/tracy_pdqsort.h"
+#include "server/tracy_robin_hood.h"
+#include "server/TracyFileHeader.hpp"
+#include "server/TracyFileRead.hpp"
+#include "server/TracyPrint.hpp"
+#include "server/TracySysUtil.hpp"
+#include "server/TracyWorker.hpp"
 
 #include "icon.hpp"
-#include "zigzag01.hpp"
-#include "zigzag02.hpp"
-#include "zigzag04.hpp"
-#include "zigzag08.hpp"
-#include "zigzag16.hpp"
-#include "zigzag32.hpp"
 
 #include "Backend.hpp"
 #include "ConnectionHistory.hpp"
@@ -112,9 +104,6 @@ static uint8_t* iconPx;
 static int iconX, iconY;
 static ImTextureID iconTex;
 static int iconTexSz;
-static uint8_t* zigzagPx[6];
-static int zigzagX[6], zigzagY[6];
-ImTextureID zigzagTex;
 static Backend* bptr;
 static bool s_customTitle = false;
 static bool s_isElevated = false;
@@ -312,12 +301,6 @@ int main( int argc, char** argv )
 
     auto iconThread = std::thread( [] {
         iconPx = stbi_load_from_memory( (const stbi_uc*)Icon_data, Icon_size, &iconX, &iconY, nullptr, 4 );
-        zigzagPx[0] = stbi_load_from_memory( (const stbi_uc*)ZigZag32_data, ZigZag32_size, &zigzagX[0], &zigzagY[0], nullptr, 4 );
-        zigzagPx[1] = stbi_load_from_memory( (const stbi_uc*)ZigZag16_data, ZigZag16_size, &zigzagX[1], &zigzagY[1], nullptr, 4 );
-        zigzagPx[2] = stbi_load_from_memory( (const stbi_uc*)ZigZag08_data, ZigZag08_size, &zigzagX[2], &zigzagY[2], nullptr, 4 );
-        zigzagPx[3] = stbi_load_from_memory( (const stbi_uc*)ZigZag04_data, ZigZag04_size, &zigzagX[3], &zigzagY[3], nullptr, 4 );
-        zigzagPx[4] = stbi_load_from_memory( (const stbi_uc*)ZigZag02_data, ZigZag02_size, &zigzagX[4], &zigzagY[4], nullptr, 4 );
-        zigzagPx[5] = stbi_load_from_memory( (const stbi_uc*)ZigZag01_data, ZigZag01_size, &zigzagX[5], &zigzagY[5], nullptr, 4 );
     } );
 
     tracy::LoadConfig();
@@ -326,7 +309,6 @@ int main( int argc, char** argv )
     Backend backend( title, DrawContents, ScaleChanged, IsBusy, &mainThreadTasks );
     tracy::InitTexture();
     iconTex = tracy::MakeTexture();
-    zigzagTex = tracy::MakeTexture( true );
     iconThread.join();
     backend.SetIcon( iconPx, iconX, iconY );
     bptr = &backend;
@@ -344,9 +326,6 @@ int main( int argc, char** argv )
     }
 
     s_achievements->Achieve( "achievementsIntro" );
-
-    tracy::UpdateTextureRGBAMips( zigzagTex, (void**)zigzagPx, zigzagX, zigzagY, 6 );
-    for( auto& v : zigzagPx ) free( v );
 
     if( initFileOpen )
     {
@@ -369,7 +348,6 @@ int main( int argc, char** argv )
     if( updateNotesThread.joinable() ) updateNotesThread.join();
     view.store( nullptr, std::memory_order_release );
 
-    tracy::FreeTexture( zigzagTex, RunOnMainThread );
     tracy::FreeTexture( iconTex, RunOnMainThread );
     free( iconPx );
 

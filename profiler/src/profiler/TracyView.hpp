@@ -124,8 +124,8 @@ public:
     using SetScaleCallback = void(*)( float );
     using AttentionCallback = void(*)();
 
-    View( void(*cbMainThread)(const std::function<void()>&, bool), const char* addr, uint16_t port, SetTitleCallback stcb, SetScaleCallback sscb, AttentionCallback acb, AchievementsMgr* amgr );
-    View( void(*cbMainThread)(const std::function<void()>&, bool), FileRead& f, SetTitleCallback stcb, SetScaleCallback sscb, AttentionCallback acb, AchievementsMgr* amgr );
+    View( void(*cbMainThread)(const std::function<void()>&, bool), const char* addr, uint16_t port, SetTitleCallback stcb, SetScaleCallback sscb, AttentionCallback acb, AchievementsMgr* amgr, bool embedded = false );
+    View( void(*cbMainThread)(const std::function<void()>&, bool), FileRead& f, SetTitleCallback stcb, SetScaleCallback sscb, AttentionCallback acb, AchievementsMgr* amgr, bool embedded = false );
     ~View();
 
     bool Draw();
@@ -472,6 +472,7 @@ private:
     Worker m_worker;
     std::string m_filename, m_filenameStaging;
     bool m_staticView;
+    bool m_embedded;
     ViewMode m_viewMode;
     bool m_viewModeHeuristicTry = false;
     DecayValue<bool> m_forceConnectionPopup = false;

@@ -4,6 +4,9 @@
 #include <functional>
 #include <imgui.h>
 
+// Global zigzag texture initialized by InitTexture()
+extern ImTextureID zigzagTex;
+
 namespace tracy
 {
 

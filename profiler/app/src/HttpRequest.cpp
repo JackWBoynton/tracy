@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../public/common/TracySocket.hpp"
-#include "../public/common/TracyVersion.hpp"
+#include "public/common/TracySocket.hpp"
+#include "public/common/TracyVersion.hpp"
 #include "GitRef.hpp"
 #include "HttpRequest.hpp"
 
