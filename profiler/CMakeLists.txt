@@ -184,10 +184,10 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 include_directories(${INCLUDES})
 
-if(NOT EMSCRIPTEN)
-    if(NOT NO_FILESELECTOR)
-        target_link_libraries(${PROJECT_NAME} PRIVATE nfd::nfd)
-    endif()
+if(NO_FILESELECTOR)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC TRACY_NO_FILESELECTOR)
+elseif(NOT EMSCRIPTEN)
+    target_link_libraries(${PROJECT_NAME} PRIVATE nfd::nfd)
 endif()
 
 
