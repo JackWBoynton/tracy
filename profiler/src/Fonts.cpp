@@ -1,6 +1,6 @@
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <math.h>
-#include <backends/imgui_impl_opengl3.h>
 #include <misc/freetype/imgui_freetype.h>
 
 #include "Fonts.hpp"
@@ -15,13 +15,33 @@
 #include "data/FontItalic.hpp"
 #include "data/FontEmoji.hpp"
 
-FontData g_fonts;
+namespace tracy
+{
 
-float FontNormal, FontSmall, FontBig;
+FontData g_fonts = {};
+float FontNormal = 0, FontSmall = 0, FontBig = 0;
+static bool s_fontsLoaded = false;
+static bool s_needsRebuild = false;
+
+bool FontsNeedRebuild()
+{
+    return s_needsRebuild;
+}
+
+void FontsRebuilt()
+{
+    s_needsRebuild = false;
+}
 
 void LoadFonts( float scale )
 {
-    ImGuiIO& io = ImGui::GetIO();
+    if( s_fontsLoaded )
+        return;
+
+    auto* atlas = ImGui::GetIO().Fonts;
+
+    // If atlas is already built, we need to trigger a rebuild after adding fonts
+    bool wasBuilt = atlas->IsBuilt();
 
     ImFontConfig configBasic;
     configBasic.FontLoaderFlags = ImGuiFreeTypeLoaderFlags_LightHinting;
@@ -43,29 +63,46 @@ void LoadFonts( float scale )
     auto fontItalic = Unembed( FontItalic );
     auto fontEmoji = Unembed( FontEmoji );
 
-    io.Fonts->Clear();
+    // Add Tracy fonts as separate entries in the main atlas
+    g_fonts.normal = atlas->AddFontFromMemoryTTF( (void*)fontNormal->data(), fontNormal->size(), round( 15.0f * scale ), &configBasic );
+    atlas->AddFontFromMemoryTTF( (void*)fontIcons->data(), fontIcons->size(), round( 14.0f * scale ), &configMerge );
+    atlas->AddFontFromMemoryTTF( (void*)fontEmoji->data(), fontEmoji->size(), round( 14.0f * scale ), &configMerge );
 
-    g_fonts.normal = io.Fonts->AddFontFromMemoryTTF( (void*)fontNormal->data(), fontNormal->size(), round( 15.0f * scale ), &configBasic );
-    io.Fonts->AddFontFromMemoryTTF( (void*)fontIcons->data(), fontIcons->size(), round( 14.0f * scale ), &configMerge );
-    io.Fonts->AddFontFromMemoryTTF( (void*)fontEmoji->data(), fontEmoji->size(), round( 14.0f * scale ), &configMerge );
+    g_fonts.mono = atlas->AddFontFromMemoryTTF( (void*)fontFixed->data(), fontFixed->size(), round( 15.0f * scale ), &configFixed );
+    atlas->AddFontFromMemoryTTF( (void*)fontIcons->data(), fontIcons->size(), round( 14.0f * scale ), &configMerge );
+    atlas->AddFontFromMemoryTTF( (void*)fontEmoji->data(), fontEmoji->size(), round( 14.0f * scale ), &configMerge );
 
-    g_fonts.mono = io.Fonts->AddFontFromMemoryTTF( (void*)fontFixed->data(), fontFixed->size(), round( 15.0f * scale ), &configFixed );
-    io.Fonts->AddFontFromMemoryTTF( (void*)fontIcons->data(), fontIcons->size(), round( 14.0f * scale ), &configMerge );
-    io.Fonts->AddFontFromMemoryTTF( (void*)fontEmoji->data(), fontEmoji->size(), round( 14.0f * scale ), &configMerge );
+    g_fonts.bold = atlas->AddFontFromMemoryTTF( (void*)fontBold->data(), fontBold->size(), round( 15.0f * scale ), &configBasic );
+    atlas->AddFontFromMemoryTTF( (void*)fontIcons->data(), fontIcons->size(), round( 14.0f * scale ), &configMerge );
+    atlas->AddFontFromMemoryTTF( (void*)fontEmoji->data(), fontEmoji->size(), round( 14.0f * scale ), &configMerge );
 
-    g_fonts.bold = io.Fonts->AddFontFromMemoryTTF( (void*)fontBold->data(), fontBold->size(), round( 15.0f * scale ), &configBasic );
-    io.Fonts->AddFontFromMemoryTTF( (void*)fontIcons->data(), fontIcons->size(), round( 14.0f * scale ), &configMerge );
-    io.Fonts->AddFontFromMemoryTTF( (void*)fontEmoji->data(), fontEmoji->size(), round( 14.0f * scale ), &configMerge );
+    g_fonts.boldItalic = atlas->AddFontFromMemoryTTF( (void*)fontBoldItalic->data(), fontBoldItalic->size(), round( 15.0f * scale ), &configBasic );
+    atlas->AddFontFromMemoryTTF( (void*)fontIcons->data(), fontIcons->size(), round( 14.0f * scale ), &configMerge );
+    atlas->AddFontFromMemoryTTF( (void*)fontEmoji->data(), fontEmoji->size(), round( 14.0f * scale ), &configMerge );
 
-    g_fonts.boldItalic = io.Fonts->AddFontFromMemoryTTF( (void*)fontBoldItalic->data(), fontBoldItalic->size(), round( 15.0f * scale ), &configBasic );
-    io.Fonts->AddFontFromMemoryTTF( (void*)fontIcons->data(), fontIcons->size(), round( 14.0f * scale ), &configMerge );
-    io.Fonts->AddFontFromMemoryTTF( (void*)fontEmoji->data(), fontEmoji->size(), round( 14.0f * scale ), &configMerge );
-
-    g_fonts.italic = io.Fonts->AddFontFromMemoryTTF( (void*)fontItalic->data(), fontItalic->size(), round( 15.0f * scale ), &configBasic );
-    io.Fonts->AddFontFromMemoryTTF( (void*)fontIcons->data(), fontIcons->size(), round( 14.0f * scale ), &configMerge );
-    io.Fonts->AddFontFromMemoryTTF( (void*)fontEmoji->data(), fontEmoji->size(), round( 14.0f * scale ), &configMerge );
+    g_fonts.italic = atlas->AddFontFromMemoryTTF( (void*)fontItalic->data(), fontItalic->size(), round( 15.0f * scale ), &configBasic );
+    atlas->AddFontFromMemoryTTF( (void*)fontIcons->data(), fontIcons->size(), round( 14.0f * scale ), &configMerge );
+    atlas->AddFontFromMemoryTTF( (void*)fontEmoji->data(), fontEmoji->size(), round( 14.0f * scale ), &configMerge );
 
     FontNormal = round( scale * 15.f );
     FontSmall = round( scale * 15 * 2.f / 3.f );
     FontBig = round( scale * 15 * 1.4f );
+
+    s_fontsLoaded = true;
+
+    if( wasBuilt )
+    {
+        // Atlas was already built, need to rebuild it
+        atlas->Build();
+        s_needsRebuild = true;
+    }
+}
+
+void FreeFonts()
+{
+    g_fonts = {};
+    s_fontsLoaded = false;
+    s_needsRebuild = false;
+}
+
 }

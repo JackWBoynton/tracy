@@ -61,7 +61,7 @@ int main()
 
     tracy::InitTexture();
     tracy::LoadConfig();
-    LoadFonts(1.0f);
+    tracy::LoadFonts(1.0f);
 
     // Connect to ourselves (embedded mode)
     s_view = std::make_shared<tracy::View>(

@@ -149,32 +149,40 @@ else()
     message(STATUS "Using external ImGui from: ${ImGui_SOURCE_DIR}")
 endif()
 
-set(IMGUI_SOURCES
-    imgui_widgets.cpp
-    imgui_draw.cpp
-    imgui_demo.cpp
-    imgui.cpp
-    imgui_tables.cpp
-    misc/freetype/imgui_freetype.cpp
-    backends/imgui_impl_opengl3.cpp
-)
+# If an external imgui target exists (e.g., from hello_imgui), use it instead of building our own
+if(TARGET imgui)
+    message(STATUS "Using existing imgui target for TracyImGui")
+    add_library(TracyImGui INTERFACE)
+    target_link_libraries(TracyImGui INTERFACE imgui)
+    target_compile_definitions(TracyImGui INTERFACE "IMGUI_USE_WCHAR32")
+else()
+    set(IMGUI_SOURCES
+        imgui_widgets.cpp
+        imgui_draw.cpp
+        imgui_demo.cpp
+        imgui.cpp
+        imgui_tables.cpp
+        misc/freetype/imgui_freetype.cpp
+        backends/imgui_impl_opengl3.cpp
+    )
 
-list(TRANSFORM IMGUI_SOURCES PREPEND "${ImGui_SOURCE_DIR}/")
+    list(TRANSFORM IMGUI_SOURCES PREPEND "${ImGui_SOURCE_DIR}/")
 
-add_library(TracyImGui STATIC EXCLUDE_FROM_ALL ${IMGUI_SOURCES})
-target_include_directories(TracyImGui PUBLIC ${ImGui_SOURCE_DIR})
-target_link_libraries(TracyImGui PUBLIC TracyFreetype)
-target_compile_definitions(TracyImGui PRIVATE "IMGUI_ENABLE_FREETYPE")
-target_compile_definitions(TracyImGui PUBLIC "IMGUI_USE_WCHAR32")
-#target_compile_definitions(TracyImGui PUBLIC "IMGUI_DISABLE_OBSOLETE_FUNCTIONS")
+    add_library(TracyImGui STATIC EXCLUDE_FROM_ALL ${IMGUI_SOURCES})
+    target_include_directories(TracyImGui PUBLIC ${ImGui_SOURCE_DIR})
+    target_link_libraries(TracyImGui PUBLIC TracyFreetype)
+    target_compile_definitions(TracyImGui PRIVATE "IMGUI_ENABLE_FREETYPE")
+    target_compile_definitions(TracyImGui PUBLIC "IMGUI_USE_WCHAR32")
+    #target_compile_definitions(TracyImGui PUBLIC "IMGUI_DISABLE_OBSOLETE_FUNCTIONS")
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Linux" AND LEGACY)
-    find_package(X11 REQUIRED)
-    target_link_libraries(TracyImGui PUBLIC ${X11_LIBRARIES})
-endif()
+    if (CMAKE_SYSTEM_NAME STREQUAL "Linux" AND LEGACY)
+        find_package(X11 REQUIRED)
+        target_link_libraries(TracyImGui PUBLIC ${X11_LIBRARIES})
+    endif()
 
-if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_compile_definitions(TracyImGui PRIVATE "IMGUI_DISABLE_DEBUG_TOOLS" "IMGUI_DISABLE_DEMO_WINDOWS")
+    if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+        target_compile_definitions(TracyImGui PRIVATE "IMGUI_DISABLE_DEBUG_TOOLS" "IMGUI_DISABLE_DEMO_WINDOWS")
+    endif()
 endif()
 
 # NFD

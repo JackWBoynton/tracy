@@ -1142,7 +1142,7 @@ bool TracyLlm::OnResponse( const nlohmann::json& json )
                 }
                 catch( const nlohmann::json::exception& e )
                 {
-                    result = nlohmann::json {{ "error", e.what() }};
+                    result = nlohmann::json {{ "error", e.what() }}.dump();
                 }
 
                 nlohmann::json reply = {

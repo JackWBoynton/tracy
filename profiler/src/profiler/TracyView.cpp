@@ -306,6 +306,8 @@ static_assert( sizeof( CompressionName ) == sizeof( CompressionDesc ), "Unmatche
 
 bool View::Draw()
 {
+    ImGui::PushFont( g_fonts.normal );
+
     HandshakeStatus status = (HandshakeStatus)m_worker.GetHandshakeStatus();
     switch( status )
     {
@@ -344,6 +346,7 @@ bool View::Draw()
             ImGui::CloseCurrentPopup();
             ImGui::EndPopup();
             m_attnProtoMismatch = false;
+            ImGui::PopFont();
             return false;
         }
         ImGui::SameLine();
@@ -353,6 +356,7 @@ bool View::Draw()
             ImGui::EndPopup();
             m_reconnectRequested = true;
             m_attnProtoMismatch = false;
+            ImGui::PopFont();
             return false;
         }
         ImGui::EndPopup();
@@ -370,6 +374,7 @@ bool View::Draw()
             ImGui::CloseCurrentPopup();
             ImGui::EndPopup();
             m_attnNotAvailable = false;
+            ImGui::PopFont();
             return false;
         }
         ImGui::SameLine();
@@ -379,6 +384,7 @@ bool View::Draw()
             ImGui::EndPopup();
             m_reconnectRequested = true;
             m_attnNotAvailable = false;
+            ImGui::PopFont();
             return false;
         }
         ImGui::EndPopup();
@@ -396,6 +402,7 @@ bool View::Draw()
             ImGui::CloseCurrentPopup();
             ImGui::EndPopup();
             m_attnDropped = false;
+            ImGui::PopFont();
             return false;
         }
         ImGui::SameLine();
@@ -405,6 +412,7 @@ bool View::Draw()
             ImGui::EndPopup();
             m_reconnectRequested = true;
             m_attnDropped = false;
+            ImGui::PopFont();
             return false;
         }
         ImGui::EndPopup();
@@ -677,11 +685,14 @@ bool View::Draw()
         ImGui::IsKeyPressed( ImGuiKey_R ) )
     {
         m_reconnectRequested = true;
+        ImGui::PopFont();
         return false;
     }
 
     s_time += ImGui::GetIO().DeltaTime;
-    return DrawImpl();
+    bool result = DrawImpl();
+    ImGui::PopFont();
+    return result;
 }
 
 static const char* MainWindowButtons[] = {

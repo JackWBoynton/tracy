@@ -13,22 +13,24 @@
 #include "../zigzag16.hpp"
 #include "../zigzag32.hpp"
 
-// Backend selection - define one of these before including this file:
-//   TRACY_BACKEND_OPENGL3
-//   TRACY_BACKEND_VULKAN
-//   TRACY_BACKEND_D3D11
-//   TRACY_BACKEND_D3D12
-//   TRACY_BACKEND_METAL
-//   TRACY_BACKEND_WEBGPU
+// Backend selection - define one of these:
+//   TRACY_BACKEND_OPENGL3 - full built-in implementation
+//   TRACY_BACKEND_VULKAN  - requires SetTextureCallbacks()
+//   TRACY_BACKEND_METAL   - requires SetTextureCallbacks()
+//   TRACY_BACKEND_D3D11   - requires SetTextureCallbacks()
+//   TRACY_BACKEND_D3D12   - requires SetTextureCallbacks()
+//
+// Or call SetTextureCallbacks() with your own implementation before InitTexture().
 
 #if defined(TRACY_BACKEND_OPENGL3)
 #  ifdef __EMSCRIPTEN__
 #    include <emscripten/html5.h>
 #    include <GLES2/gl2.h>
+#  elif defined(TRACY_OPENGL_GLAD)
+#    include <glad/glad.h>
 #  elif defined(__APPLE__)
 #    define GL_SILENCE_DEPRECATION
 #    include <OpenGL/gl3.h>
-#    include <OpenGL/gl3ext.h>
 #  elif defined(_WIN32)
 #    include <backends/imgui_impl_opengl3_loader.h>
 #  else
@@ -47,11 +49,19 @@ ImTextureID zigzagTex;
 namespace tracy
 {
 
+// Custom texture callbacks (for Vulkan, Metal, D3D, etc.)
+static TextureCallbacks s_callbacks = {};
+
+void SetTextureCallbacks( const TextureCallbacks& callbacks )
+{
+    s_callbacks = callbacks;
+}
+
 #if defined(TRACY_BACKEND_OPENGL3)
 
 static bool s_hardwareS3tc;
 
-void InitTexture()
+static void InitTextureGL()
 {
 #ifdef __EMSCRIPTEN__
     s_hardwareS3tc = emscripten_webgl_enable_extension( emscripten_webgl_get_current_context(), "WEBGL_compressed_texture_s3tc" );
@@ -69,25 +79,9 @@ void InitTexture()
         }
     }
 #endif
-
-    // Initialize zigzag texture
-    zigzagTex = MakeTexture( true );
-
-    uint8_t* zigzagPx[6];
-    int zigzagX[6], zigzagY[6];
-    zigzagPx[0] = stbi_load_from_memory( (const stbi_uc*)ZigZag32_data, ZigZag32_size, &zigzagX[0], &zigzagY[0], nullptr, 4 );
-    zigzagPx[1] = stbi_load_from_memory( (const stbi_uc*)ZigZag16_data, ZigZag16_size, &zigzagX[1], &zigzagY[1], nullptr, 4 );
-    zigzagPx[2] = stbi_load_from_memory( (const stbi_uc*)ZigZag08_data, ZigZag08_size, &zigzagX[2], &zigzagY[2], nullptr, 4 );
-    zigzagPx[3] = stbi_load_from_memory( (const stbi_uc*)ZigZag04_data, ZigZag04_size, &zigzagX[3], &zigzagY[3], nullptr, 4 );
-    zigzagPx[4] = stbi_load_from_memory( (const stbi_uc*)ZigZag02_data, ZigZag02_size, &zigzagX[4], &zigzagY[4], nullptr, 4 );
-    zigzagPx[5] = stbi_load_from_memory( (const stbi_uc*)ZigZag01_data, ZigZag01_size, &zigzagX[5], &zigzagY[5], nullptr, 4 );
-
-    UpdateTextureRGBAMips( zigzagTex, (void**)zigzagPx, zigzagX, zigzagY, 6 );
-
-    for( auto& v : zigzagPx ) free( v );
 }
 
-ImTextureID MakeTexture( bool zigzag )
+static ImTextureID MakeTextureGL( bool zigzag )
 {
     GLuint tex;
     glGenTextures( 1, &tex );
@@ -99,7 +93,7 @@ ImTextureID MakeTexture( bool zigzag )
     return (ImTextureID)(intptr_t)tex;
 }
 
-void FreeTexture( ImTextureID _tex, void(*runOnMainThread)(const std::function<void()>&, bool) )
+static void FreeTextureGL( ImTextureID _tex, void(*runOnMainThread)(const std::function<void()>&, bool) )
 {
     auto tex = (GLuint)(intptr_t)_tex;
     runOnMainThread( [tex] { glDeleteTextures( 1, &tex ); }, false );
@@ -187,7 +181,7 @@ static tracy_force_inline void DecodeDxt1Part( uint64_t d, uint32_t* dst, uint32
     memcpy( dst+3, dict + (idx & 0x3), 4 );
 }
 
-void UpdateTexture( ImTextureID _tex, const char* data, int w, int h )
+static void UpdateTextureGL( ImTextureID _tex, const char* data, int w, int h )
 {
     auto tex = (GLuint)(intptr_t)_tex;
     glBindTexture( GL_TEXTURE_2D, tex );
@@ -215,14 +209,14 @@ void UpdateTexture( ImTextureID _tex, const char* data, int w, int h )
     }
 }
 
-void UpdateTextureRGBA( ImTextureID _tex, void* data, int w, int h )
+static void UpdateTextureRGBAGL( ImTextureID _tex, void* data, int w, int h )
 {
     auto tex = (GLuint)(intptr_t)_tex;
     glBindTexture( GL_TEXTURE_2D, tex );
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data );
 }
 
-void UpdateTextureRGBAMips( ImTextureID _tex, void** data, int* w, int* h, size_t mips )
+static void UpdateTextureRGBAMipsGL( ImTextureID _tex, void** data, int* w, int* h, size_t mips )
 {
     auto tex = (GLuint)(intptr_t)_tex;
     glBindTexture( GL_TEXTURE_2D, tex );
@@ -232,34 +226,89 @@ void UpdateTextureRGBAMips( ImTextureID _tex, void** data, int* w, int* h, size_
     }
 }
 
-#else // No backend defined - stub implementations
+#else // No built-in backend - OpenGL functions not available
+
+static void InitTextureGL() {}
+static ImTextureID MakeTextureGL( bool ) { return 0; }
+static void FreeTextureGL( ImTextureID, void(*)(const std::function<void()>&, bool) ) {}
+static void UpdateTextureGL( ImTextureID, const char*, int, int ) {}
+static void UpdateTextureRGBAGL( ImTextureID, void*, int, int ) {}
+static void UpdateTextureRGBAMipsGL( ImTextureID, void**, int*, int*, size_t ) {}
+
+#endif
+
+// Public API - dispatches to callbacks if set, otherwise uses built-in OpenGL
 
 void InitTexture()
 {
-    zigzagTex = 0;
+    // Initialize backend-specific state (e.g., S3TC detection for OpenGL)
+    if( !s_callbacks.MakeTexture )
+        InitTextureGL();
+
+    auto makeTexFn = s_callbacks.MakeTexture ? s_callbacks.MakeTexture : MakeTextureGL;
+    auto updateMipsFn = s_callbacks.UpdateTextureRGBAMips ? s_callbacks.UpdateTextureRGBAMips : UpdateTextureRGBAMipsGL;
+
+    zigzagTex = makeTexFn( true );
+
+    uint8_t* zigzagPx[6];
+    int zigzagX[6], zigzagY[6];
+    zigzagPx[0] = stbi_load_from_memory( (const stbi_uc*)ZigZag32_data, ZigZag32_size, &zigzagX[0], &zigzagY[0], nullptr, 4 );
+    zigzagPx[1] = stbi_load_from_memory( (const stbi_uc*)ZigZag16_data, ZigZag16_size, &zigzagX[1], &zigzagY[1], nullptr, 4 );
+    zigzagPx[2] = stbi_load_from_memory( (const stbi_uc*)ZigZag08_data, ZigZag08_size, &zigzagX[2], &zigzagY[2], nullptr, 4 );
+    zigzagPx[3] = stbi_load_from_memory( (const stbi_uc*)ZigZag04_data, ZigZag04_size, &zigzagX[3], &zigzagY[3], nullptr, 4 );
+    zigzagPx[4] = stbi_load_from_memory( (const stbi_uc*)ZigZag02_data, ZigZag02_size, &zigzagX[4], &zigzagY[4], nullptr, 4 );
+    zigzagPx[5] = stbi_load_from_memory( (const stbi_uc*)ZigZag01_data, ZigZag01_size, &zigzagX[5], &zigzagY[5], nullptr, 4 );
+
+    updateMipsFn( zigzagTex, (void**)zigzagPx, zigzagX, zigzagY, 6 );
+
+    for( auto& v : zigzagPx ) free( v );
 }
 
-ImTextureID MakeTexture( bool )
+ImTextureID MakeTexture( bool zigzag )
 {
-    return 0;
+    if( s_callbacks.MakeTexture )
+        return s_callbacks.MakeTexture( zigzag );
+    return MakeTextureGL( zigzag );
 }
 
-void FreeTexture( ImTextureID, void(*)(const std::function<void()>&, bool) )
+void FreeTexture( ImTextureID tex, void(*runOnMainThread)(const std::function<void()>&, bool) )
 {
+    if( s_callbacks.FreeTexture )
+    {
+        s_callbacks.FreeTexture( tex, runOnMainThread );
+        return;
+    }
+    FreeTextureGL( tex, runOnMainThread );
 }
 
-void UpdateTexture( ImTextureID, const char*, int, int )
+void UpdateTexture( ImTextureID tex, const char* data, int w, int h )
 {
+    if( s_callbacks.UpdateTexture )
+    {
+        s_callbacks.UpdateTexture( tex, data, w, h );
+        return;
+    }
+    UpdateTextureGL( tex, data, w, h );
 }
 
-void UpdateTextureRGBA( ImTextureID, void*, int, int )
+void UpdateTextureRGBA( ImTextureID tex, void* data, int w, int h )
 {
+    if( s_callbacks.UpdateTextureRGBA )
+    {
+        s_callbacks.UpdateTextureRGBA( tex, data, w, h );
+        return;
+    }
+    UpdateTextureRGBAGL( tex, data, w, h );
 }
 
-void UpdateTextureRGBAMips( ImTextureID, void**, int*, int*, size_t )
+void UpdateTextureRGBAMips( ImTextureID tex, void** data, int* w, int* h, size_t mips )
 {
+    if( s_callbacks.UpdateTextureRGBAMips )
+    {
+        s_callbacks.UpdateTextureRGBAMips( tex, data, w, h, mips );
+        return;
+    }
+    UpdateTextureRGBAMipsGL( tex, data, w, h, mips );
 }
-
-#endif
 
 }

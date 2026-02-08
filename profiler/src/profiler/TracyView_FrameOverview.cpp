@@ -48,8 +48,7 @@ void View::DrawFrames()
 
     const auto wpos = ImGui::GetCursorScreenPos();
     const auto dpos = wpos + ImVec2( 0.5f, 0.5f );
-    const auto wspace = ImGui::GetContentRegionAvail() + ImGui::GetCursorScreenPos();
-    const auto w = wspace.x;
+    const auto w = ImGui::GetContentRegionAvail().x;
     auto draw = ImGui::GetWindowDrawList();
 
     ImGui::InvisibleButton( "##frames", ImVec2( w, Height ) );

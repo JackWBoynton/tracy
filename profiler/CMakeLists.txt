@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.25)
 
 option(NO_APP "Disable the profiler application" OFF)
 option(NO_FILESELECTOR "Disable the file selector" OFF)
+option(NO_STB_IMAGE "Disable stb_image (use if host project already provides it)" OFF)
 option(GTK_FILESELECTOR "Use the GTK file selector on Linux instead of the xdg-portal one" OFF)
 option(LEGACY "Instead of Wayland, use the legacy X11 backend on Linux" OFF)
 option(NO_ISA_EXTENSIONS "Disable ISA extensions (don't pass -march=native or -mcpu=native to the compiler)" OFF)
@@ -136,8 +137,11 @@ list(APPEND SERVER_FILES
     # TODO(jack): this previously was only in the app
     src/Fonts.cpp
     src/ini.c
-    src/stb_image_impl.cpp
 )
+
+if(NOT NO_STB_IMAGE)
+    list(APPEND SERVER_FILES src/stb_image_impl.cpp)
+endif()
 
 Embed(SERVER_FILES Manual ../manual/tracy.md)
 
@@ -208,6 +212,39 @@ endif()
 option(BUILD_EXAMPLE "Build the embedded profiler example" OFF)
 if (BUILD_EXAMPLE)
     add_subdirectory(example)
+endif()
+
+# Graphics backend selection (set one to ON)
+option(TRACY_BACKEND_OPENGL3 "Use OpenGL3 backend" OFF)
+option(TRACY_BACKEND_VULKAN "Use Vulkan backend (requires SetTextureCallbacks)" OFF)
+option(TRACY_BACKEND_METAL "Use Metal backend (requires SetTextureCallbacks)" OFF)
+option(TRACY_BACKEND_DIRECTX11 "Use DirectX 11 backend (requires SetTextureCallbacks)" OFF)
+option(TRACY_BACKEND_DIRECTX12 "Use DirectX 12 backend (requires SetTextureCallbacks)" OFF)
+
+# For OpenGL with glad loader (e.g. HelloImGui) - set this and provide glad target
+option(TRACY_OPENGL_GLAD "Use glad for OpenGL loading" OFF)
+
+if(TRACY_BACKEND_OPENGL3)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC TRACY_BACKEND_OPENGL3)
+    if(TRACY_OPENGL_GLAD AND TARGET glad)
+        target_compile_definitions(${PROJECT_NAME} PUBLIC TRACY_OPENGL_GLAD)
+        target_link_libraries(${PROJECT_NAME} PUBLIC glad)
+    elseif(APPLE)
+        target_link_libraries(${PROJECT_NAME} PUBLIC "-framework OpenGL")
+    elseif(WIN32)
+        target_link_libraries(${PROJECT_NAME} PUBLIC opengl32)
+    elseif(NOT EMSCRIPTEN)
+        find_package(OpenGL REQUIRED)
+        target_link_libraries(${PROJECT_NAME} PUBLIC OpenGL::GL)
+    endif()
+elseif(TRACY_BACKEND_VULKAN)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC TRACY_BACKEND_VULKAN)
+elseif(TRACY_BACKEND_METAL)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC TRACY_BACKEND_METAL)
+elseif(TRACY_BACKEND_DIRECTX11)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC TRACY_BACKEND_DIRECTX11)
+elseif(TRACY_BACKEND_DIRECTX12)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC TRACY_BACKEND_DIRECTX12)
 endif()
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})

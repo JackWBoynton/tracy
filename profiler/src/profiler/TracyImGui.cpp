@@ -24,6 +24,7 @@ bool WasActive()
 
 void DrawZigZag( ImDrawList* draw, const ImVec2& wpos, double start, double end, double h, uint32_t color )
 {
+    if( !zigzagTex ) return;  // Skip if texture not initialized
     const auto v = ( end - start ) / ( h * 2 );
     draw->AddImage( zigzagTex, wpos + ImVec2( start, -h ), wpos + ImVec2( end, h ), ImVec2( 0, 0 ), ImVec2( v, 1 ), color );
 }

@@ -61,6 +61,10 @@
 
 #include "GitRef.hpp"
 
+using tracy::g_fonts;
+using tracy::FontNormal;
+using tracy::FontSmall;
+using tracy::FontBig;
 
 struct ClientData
 {
@@ -158,7 +162,7 @@ static void SetupDPIScale()
     scale = tracy::s_config.userScale;
 #endif
 
-    LoadFonts( scale );
+    tracy::LoadFonts( scale );
 
     auto& style = ImGui::GetStyle();
     style = ImGuiStyle();
