@@ -258,14 +258,16 @@ install(FILES ${common_includes}
 install(DIRECTORY public/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tracy/public
         FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
-install(DIRECTORY server/
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tracy/server
-        FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
-install(DIRECTORY profiler/src/profiler/
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tracy/profiler
-        FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
-install(FILES profiler/src/Fonts.hpp
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tracy)
+if(TRACY_PROFILER)
+    install(DIRECTORY server/
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tracy/server
+            FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
+    install(DIRECTORY profiler/src/profiler/
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tracy/profiler
+            FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
+    install(FILES profiler/src/Fonts.hpp
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tracy)
+endif()
 if(TRACY_Fortran)
     if(${CMAKE_Fortran_COMPILER_ID} MATCHES "Cray")
         install(FILES ${PROJECT_BINARY_DIR}/TRACY.mod
@@ -285,6 +287,14 @@ configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
         INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/TracyConfig.cmake
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+
+option(TRACY_PROFILER "Build the embeddable profiler library" OFF)
+if(TRACY_PROFILER)
+    add_subdirectory(profiler)
+    install(TARGETS tracy-profiler-lib
+            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+endif()
 
 option(TRACY_CLIENT_PYTHON "Whether to build Tracy python client library" OFF)
 
