@@ -155,6 +155,7 @@ else()
 endif()
 
 # If an external imgui target exists (e.g., from hello_imgui or Conan), use it instead of building our own
+find_package(imgui QUIET)
 if(TARGET imgui::imgui)
     message(STATUS "Using existing imgui::imgui target for TracyImGui")
     add_library(TracyImGui INTERFACE)
