@@ -255,6 +255,11 @@ foreach(_dep_target libzstd_static capstone_static capstone base64 tidy-static f
         list(APPEND _profiler_install_targets ${_dep_target})
     endif()
 endforeach()
+foreach(_t ${_profiler_install_targets})
+    if(TARGET ${_t})
+        set_target_properties(${_t} PROPERTIES EXCLUDE_FROM_ALL FALSE)
+    endif()
+endforeach()
 install(TARGETS ${_profiler_install_targets}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
