@@ -258,6 +258,9 @@ install(FILES ${common_includes}
 install(DIRECTORY profiler/src/profiler/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tracy/profiler
         FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
+install(DIRECTORY server/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tracy/profiler
+        FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
 install(FILES profiler/src/Fonts.hpp
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tracy)
 if(TRACY_Fortran)
