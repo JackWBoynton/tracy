@@ -259,7 +259,7 @@ install(DIRECTORY public/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tracy/public
         FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
 install(DIRECTORY server/
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tracy/server
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tracy/profiler
         FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
 install(DIRECTORY profiler/src/profiler/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tracy/profiler
