@@ -105,6 +105,7 @@ void View::DrawCallstackTable( uint32_t callstack, bool globalEntriesButton )
         }
         ImGui::SetClipboardText( s.str().c_str() );
     }
+#ifdef TRACY_HAS_LLM
     if( s_config.llm )
     {
         auto Attach = [&]() {
@@ -145,6 +146,7 @@ void View::DrawCallstackTable( uint32_t callstack, bool globalEntriesButton )
             ImGui::EndPopup();
         }
     }
+#endif
     ImGui::SameLine();
     ImGui::Spacing();
     ImGui::SameLine();
@@ -190,7 +192,7 @@ void View::DrawCallstackTable( uint32_t callstack, bool globalEntriesButton )
     }
     ImGui::PopStyleVar();
 
-#ifndef __EMSCRIPTEN__
+#ifdef TRACY_HAS_LLM
     if( s_config.llm )
     {
         bool force = false;

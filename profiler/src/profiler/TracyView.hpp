@@ -31,7 +31,7 @@
 #include "../server/tracy_robin_hood.h"
 #include "../server/TracyVector.hpp"
 
-#ifndef __EMSCRIPTEN__
+#ifdef TRACY_HAS_LLM
 #  include "TracyLlm.hpp"
 #endif
 
@@ -178,8 +178,10 @@ public:
 
     bool IsBackgroundDone() const { return m_worker.IsBackgroundDone(); }
 
+#ifdef TRACY_HAS_LLM
     void AddLlmAttachment( const nlohmann::json& json );
     void AddLlmQuery( const char* query );
+#endif
 
     bool m_showRanges = false;
     Range m_statRange;
@@ -983,7 +985,7 @@ private:
         }
     } m_flameGraphInvariant;
 
-#ifndef __EMSCRIPTEN__
+#ifdef TRACY_HAS_LLM
     TracyLlm m_llm;
 
     unordered_flat_map<uint32_t, std::string> m_callstackDesc;

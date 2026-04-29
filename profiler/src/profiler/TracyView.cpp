@@ -65,7 +65,9 @@ View::View( void(*cbMainThread)(const std::function<void()>&, bool), const char*
     , m_td( 2, "ViewMt" )
 #else
     , m_td( std::thread::hardware_concurrency(), "ViewMt" )
+#  ifdef TRACY_HAS_LLM
     , m_llm( m_worker, *this, *m_manualData )
+#  endif
 #endif
 {
     InitTextEditor();
@@ -97,7 +99,9 @@ View::View( void(*cbMainThread)(const std::function<void()>&, bool), FileRead& f
     , m_td( 2, "ViewMt" )
 #else
     , m_td( std::thread::hardware_concurrency(), "ViewMt" )
+#  ifdef TRACY_HAS_LLM
     , m_llm( m_worker, *this, *m_manualData )
+#  endif
 #endif
 {
     m_notificationTime = 4;
@@ -985,7 +989,7 @@ bool View::DrawImpl()
             ImGui::EndPopup();
         }
     }
-#ifndef __EMSCRIPTEN__
+#ifdef TRACY_HAS_LLM
     if( s_config.llm )
     {
         ImGui::SameLine();
@@ -1192,7 +1196,7 @@ bool View::DrawImpl()
     if( m_showRanges ) DrawRanges();
     if( m_showWaitStacks ) DrawWaitStacks();
     if( m_showManual ) DrawManual();
-#ifndef __EMSCRIPTEN__
+#ifdef TRACY_HAS_LLM
     if( m_llm.m_show ) m_llm.Draw();
 #endif
 
@@ -1524,22 +1528,20 @@ bool View::WasActive() const
         !m_worker.IsBackgroundDone();
 }
 
+#ifdef TRACY_HAS_LLM
 void View::AddLlmAttachment( const nlohmann::json& json )
 {
-#ifndef __EMSCRIPTEN__
     m_llm.AddAttachmentLocking( json.dump(), "user" );
     m_llm.m_show = true;
-#endif
 }
 
 void View::AddLlmQuery( const char* query )
 {
-#ifndef __EMSCRIPTEN__
     std::string str( query );
     m_llm.AddMessageLocking( std::move( str ), "user" );
     m_llm.m_show = true;
     m_llm.QueueSendMessageLocking();
-#endif
 }
+#endif
 
 }
