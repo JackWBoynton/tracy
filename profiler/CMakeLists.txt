@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+
 option(NO_APP "Disable the profiler application" OFF)
 option(NO_FILESELECTOR "Disable the file selector" OFF)
 option(NO_STB_IMAGE "Disable stb_image (use if host project already provides it)" OFF)
