@@ -154,8 +154,13 @@ else()
     message(STATUS "Using external ImGui from: ${ImGui_SOURCE_DIR}")
 endif()
 
-# If an external imgui target exists (e.g., from hello_imgui), use it instead of building our own
-if(TARGET imgui)
+# If an external imgui target exists (e.g., from hello_imgui or Conan), use it instead of building our own
+if(TARGET imgui::imgui)
+    message(STATUS "Using existing imgui::imgui target for TracyImGui")
+    add_library(TracyImGui INTERFACE)
+    target_link_libraries(TracyImGui INTERFACE imgui::imgui)
+    target_compile_definitions(TracyImGui INTERFACE "IMGUI_USE_WCHAR32")
+elseif(TARGET imgui)
     message(STATUS "Using existing imgui target for TracyImGui")
     add_library(TracyImGui INTERFACE)
     target_link_libraries(TracyImGui INTERFACE imgui)
