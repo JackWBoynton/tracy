@@ -248,9 +248,17 @@ elseif(TRACY_BACKEND_DIRECTX12)
 endif()
 
 include(GNUInstallDirs)
-install(TARGETS ${PROJECT_NAME}
+
+set(_profiler_install_targets ${PROJECT_NAME} TracyServer TracyImGui TracyGetOpt)
+foreach(_dep_target libzstd_static capstone_static capstone base64 tidy-static freetype pugixml libcurl_static md4c md4c-html)
+    if(TARGET ${_dep_target})
+        list(APPEND _profiler_install_targets ${_dep_target})
+    endif()
+endforeach()
+install(TARGETS ${_profiler_install_targets}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(DIRECTORY src/profiler/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/profiler
         FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
