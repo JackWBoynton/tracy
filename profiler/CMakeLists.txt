@@ -9,6 +9,7 @@ option(GTK_FILESELECTOR "Use the GTK file selector on Linux instead of the xdg-p
 option(LEGACY "Instead of Wayland, use the legacy X11 backend on Linux" OFF)
 option(NO_ISA_EXTENSIONS "Disable ISA extensions (don't pass -march=native or -mcpu=native to the compiler)" OFF)
 option(NO_STATISTICS "Disable calculation of statistics" OFF)
+option(NO_LLM "Disable LLM features (removes curl, pugixml, tidy, base64, usearch deps)" OFF)
 
 option(SELF_PROFILE "Enable self-profiling" OFF)
 set(SANITIZE "" CACHE STRING "Sanitizer parameters")
@@ -122,7 +123,7 @@ set(SERVER_FILES
     TracyWeb.cpp
 )
 
-if(NOT EMSCRIPTEN)
+if(NOT EMSCRIPTEN AND NOT NO_LLM)
     list(APPEND SERVER_FILES
         TracyLlm.cpp
         TracyLlmApi.cpp
@@ -147,8 +148,10 @@ endif()
 
 Embed(SERVER_FILES Manual ../manual/tracy.md)
 
-Embed(SERVER_FILES SystemPrompt src/llm/system.prompt.md)
-Embed(SERVER_FILES ToolsJson src/llm/tools.json)
+if(NOT NO_LLM)
+    Embed(SERVER_FILES SystemPrompt src/llm/system.prompt.md)
+    Embed(SERVER_FILES ToolsJson src/llm/tools.json)
+endif()
 Embed(SERVER_FILES FontFixed src/font/FiraCode-Retina.ttf)
 Embed(SERVER_FILES FontIcons src/font/Font\ Awesome\ 6\ Free-Solid-900.otf)
 Embed(SERVER_FILES FontNormal src/font/Roboto-Regular.ttf)
@@ -197,7 +200,7 @@ elseif(NOT EMSCRIPTEN)
 endif()
 
 
-if(NOT EMSCRIPTEN)
+if(NOT EMSCRIPTEN AND NOT NO_LLM)
     target_link_libraries(${PROJECT_NAME} PRIVATE
         TracyLibcurl
         base64
@@ -205,6 +208,7 @@ if(NOT EMSCRIPTEN)
         TracyPugixml
         usearch
     )
+    target_compile_definitions(${PROJECT_NAME} PRIVATE TRACY_HAS_LLM)
 endif()
 
 if (NOT NO_APP)
@@ -252,7 +256,7 @@ endif()
 include(GNUInstallDirs)
 
 set(_profiler_install_targets ${PROJECT_NAME} TracyServer TracyImGui TracyGetOpt)
-foreach(_dep_target libzstd_static capstone_static capstone base64 tidy-static freetype pugixml-static pugixml libcurl_static md4c md4c-html)
+foreach(_dep_target libzstd_static capstone_static capstone freetype md4c md4c-html)
     if(TARGET ${_dep_target})
         list(APPEND _profiler_install_targets ${_dep_target})
     endif()
