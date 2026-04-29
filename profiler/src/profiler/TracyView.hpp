@@ -181,6 +181,9 @@ public:
 #ifdef TRACY_HAS_LLM
     void AddLlmAttachment( const nlohmann::json& json );
     void AddLlmQuery( const char* query );
+#else
+    void AddLlmAttachment( const nlohmann::json& ) {}
+    void AddLlmQuery( const char* ) {}
 #endif
 
     bool m_showRanges = false;
