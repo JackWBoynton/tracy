@@ -252,7 +252,7 @@ endif()
 include(GNUInstallDirs)
 
 set(_profiler_install_targets ${PROJECT_NAME} TracyServer TracyImGui TracyGetOpt)
-foreach(_dep_target libzstd_static capstone_static capstone base64 tidy-static freetype pugixml libcurl_static md4c md4c-html)
+foreach(_dep_target libzstd_static capstone_static capstone base64 tidy-static freetype pugixml-static pugixml libcurl_static md4c md4c-html)
     if(TARGET ${_dep_target})
         list(APPEND _profiler_install_targets ${_dep_target})
     endif()
