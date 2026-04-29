@@ -262,3 +262,8 @@ install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/../public/
         FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
 install(FILES src/Fonts.hpp
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+if(PPQSort_SOURCE_DIR)
+    install(DIRECTORY ${PPQSort_SOURCE_DIR}/include/
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+            FILES_MATCHING PATTERN "*.h")
+endif()
