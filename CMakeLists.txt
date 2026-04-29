@@ -255,10 +255,13 @@ install(FILES ${client_includes}
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tracy/client)
 install(FILES ${common_includes}
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tracy/common)
-install(DIRECTORY profiler/src/profiler/
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tracy/profiler
+install(DIRECTORY public/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tracy/public
         FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
 install(DIRECTORY server/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tracy/server
+        FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
+install(DIRECTORY profiler/src/profiler/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tracy/profiler
         FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
 install(FILES profiler/src/Fonts.hpp
