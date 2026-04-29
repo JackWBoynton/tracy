@@ -101,6 +101,8 @@ else()
             "FT_DISABLE_PNG ON"
             "FT_DISABLE_BZIP2 ON"
             "FT_DISABLE_BROTLI ON"
+            "FT_DISABLE_ZLIB ON"
+            "BUILD_SHARED_LIBS OFF"
         EXCLUDE_FROM_ALL TRUE
     )
     add_library(TracyFreetype INTERFACE)
