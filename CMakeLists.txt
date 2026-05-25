@@ -50,7 +50,7 @@ target_compile_features(TracyClient PUBLIC cxx_std_11)
 set_target_properties(TracyClient PROPERTIES INTERPROCEDURAL_OPTIMIZATION ${LTO_SUPPORTED})
 target_include_directories(TracyClient SYSTEM PUBLIC
     $<BUILD_INTERFACE:${TRACY_PUBLIC_DIR}>
-    $<INSTALL_INTERFACE:include/tracy>)
+    $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include/tracy>)
 target_link_libraries(
     TracyClient
     PUBLIC
