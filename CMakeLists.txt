@@ -48,9 +48,9 @@ endif()
 add_library(TracyClient ${TRACY_VISIBILITY} "${TRACY_PUBLIC_DIR}/TracyClient.cpp")
 target_compile_features(TracyClient PUBLIC cxx_std_11)
 set_target_properties(TracyClient PROPERTIES INTERPROCEDURAL_OPTIMIZATION ${LTO_SUPPORTED})
-target_include_directories(TracyClient SYSTEM PUBLIC
+target_include_directories(TracyClient PUBLIC
     $<BUILD_INTERFACE:${TRACY_PUBLIC_DIR}>
-    $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include/tracy>)
+    $<INSTALL_INTERFACE:include/tracy>)
 target_link_libraries(
     TracyClient
     PUBLIC
