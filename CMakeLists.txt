@@ -37,9 +37,7 @@ find_package(rocprofiler-sdk PATHS "/opt/rocm/lib/cmake")
 
 set(TRACY_PUBLIC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/public)
 
-if(LTO_SUPPORTED)
-    set(TRACY_VISIBILITY "OBJECT")
-elseif(TRACY_STATIC)
+if(TRACY_STATIC)
     set(TRACY_VISIBILITY "STATIC")
 else()
     set(TRACY_VISIBILITY "SHARED")
