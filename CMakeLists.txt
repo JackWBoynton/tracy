@@ -218,6 +218,7 @@ set(common_includes
     ${TRACY_PUBLIC_DIR}/common/TracyMutex.hpp
     ${TRACY_PUBLIC_DIR}/common/TracyProtocol.hpp
     ${TRACY_PUBLIC_DIR}/common/TracyQueue.hpp
+    ${TRACY_PUBLIC_DIR}/common/TracyTaggedUserlandAddress.hpp
     ${TRACY_PUBLIC_DIR}/common/TracySocket.hpp
     ${TRACY_PUBLIC_DIR}/common/TracyStackFrames.hpp
     ${TRACY_PUBLIC_DIR}/common/TracySystem.hpp
@@ -226,16 +227,16 @@ set(common_includes
 
 install(TARGETS TracyClient
         EXPORT TracyConfig
-        RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR}/$<IF:$<CONFIG:Release>,,$<CONFIG>>
-        LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}/$<IF:$<CONFIG:Release>,,$<CONFIG>>
-        ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}/$<IF:$<CONFIG:Release>,,$<CONFIG>>
+        RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR}
+        LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}
         COMPONENT lib)
 if(TRACY_Fortran)
     install(TARGETS TracyClientF90
             EXPORT TracyConfig
-            RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR}/$<IF:$<CONFIG:Release>,,$<CONFIG>>
-            LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}/$<IF:$<CONFIG:Release>,,$<CONFIG>>
-            ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}/$<IF:$<CONFIG:Release>,,$<CONFIG>>
+            RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR}
+            LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}
             COMPONENT lib)
 endif()
 # Export targets to build tree root
